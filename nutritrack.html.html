@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriTrack Journal AI - Fresh Fruit & Veggie Edition</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        citrus: {
+                            50: '#fffbeed',
+                            100: '#fff3c4',
+                            500: '#ff8c00',
+                            600: '#e07300',
+                        },
+                        leaf: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            400: '#4ade80',
+                            500: '#2ecc71',
+                            600: '#16a34a',
+                            800: '#1e8449',
+                        },
+                        berry: {
+                            500: '#8e44ad',
+                            600: '#7d3c98',
+                        },
+                        apple: {
+                            500: '#e74c3c',
+                            600: '#c0392b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f4f9f4;
+            background-image: 
+                radial-gradient(at 10% 10%, rgba(46, 204, 113, 0.12) 0px, transparent 50%),
+                radial-gradient(at 90% 20%, rgba(255, 140, 0, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 80%, rgba(142, 68, 173, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Floating Fruits Animation */
+        .floating-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .fruit-float {
+            position: absolute;
+            font-size: 2.2rem;
+            opacity: 0.28;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            animation: floatAround 18s infinite ease-in-out;
+        }
+
+        @keyframes floatAround {
+            0% { transform: translateY(0px) rotate(0deg) scale(1); }
+            50% { transform: translateY(-35px) rotate(180deg) scale(1.15); }
+            100% { transform: translateY(0px) rotate(360deg) scale(1); }
+        }
+
+        /* Glassmorphism Card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 10px 30px -5px rgba(46, 204, 113, 0.1), 0 4px 15px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .glass-card-orange {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 243, 224, 0.88) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 140, 0, 0.2);
+            box-shadow: 0 10px 25px -5px rgba(255, 140, 0, 0.15);
+        }
+
+        .glass-card-green {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(230, 248, 235, 0.88) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(46, 204, 113, 0.25);
+            box-shadow: 0 10px 25px -5px rgba(46, 204, 113, 0.15);
+        }
+
+        .glass-card-purple {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(243, 229, 245, 0.88) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(142, 68, 173, 0.2);
+            box-shadow: 0 10px 25px -5px rgba(142, 68, 173, 0.12);
+        }
+
+        /* Pulse glow for badges */
+        .glow-pulse-green {
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+            animation: pulseGreen 2.5s infinite;
+        }
+
+        @keyframes pulseGreen {
+            0%, 100% { box-shadow: 0 0 15px rgba(46, 204, 113, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(46, 204, 113, 0.7); }
+        }
+
+        /* Tab Active Indicator */
+        .tab-btn.active {
+            background: linear-gradient(135deg, #2ecc71 0%, #1e8449 100%);
+            color: white;
+            box-shadow: 0 6px 18px rgba(46, 204, 113, 0.35);
+            transform: translateY(-2px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f0fdf4;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2ecc71;
+            border-radius: 999px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 pb-16 relative">
+
+    <!-- Floating Background Fruits Elements -->
+    <div class="floating-bg">
+        <span class="fruit-float" style="top: 8%; left: 5%; animation-duration: 16s;">🥑</span>
+        <span class="fruit-float" style="top: 15%; left: 88%; animation-duration: 22s; animation-delay: -3s;">🍎</span>
+        <span class="fruit-float" style="top: 35%; left: 3%; animation-duration: 19s; animation-delay: -5s;">🥦</span>
+        <span class="fruit-float" style="top: 48%; left: 92%; animation-duration: 17s; animation-delay: -2s;">🥕</span>
+        <span class="fruit-float" style="top: 68%; left: 6%; animation-duration: 21s; animation-delay: -8s;">🍓</span>
+        <span class="fruit-float" style="top: 82%; left: 85%; animation-duration: 20s; animation-delay: -4s;">🍊</span>
+        <span class="fruit-float" style="top: 25%; left: 48%; animation-duration: 25s; animation-delay: -7s;">🌽</span>
+        <span class="fruit-float" style="top: 75%; left: 45%; animation-duration: 23s; animation-delay: -10s;">🫐</span>
+        <span class="fruit-float" style="top: 90%; left: 20%; animation-duration: 18s; animation-delay: -1s;">🍌</span>
+        <span class="fruit-float" style="top: 12%; left: 70%; animation-duration: 24s; animation-delay: -6s;">🥬</span>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 relative z-10">
+
+        <!-- HEADER & HERO BANNER -->
+        <header class="mb-8">
+            <div class="glass-card rounded-3xl p-6 md:p-8 bg-gradient-to-r from-emerald-600 via-green-500 to-amber-500 text-white relative overflow-hidden shadow-2xl border-none">
+                <!-- Decorative SVG Leaves -->
+                <div class="absolute -right-10 -bottom-10 opacity-25 text-white pointer-events-none">
+                    <svg width="260" height="260" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17,8C15,8 10,11 8,15C7,17 7,19 7,21C9,21 11,21 13,20C17,18 20,13 20,11C20,9 18.5,8 17,8M12,3C10,3 5,6 3,10C2,12 2,14 2,16C4,16 6,16 8,15C12,13 15,8 15,6C15,4 13.5,3 12,3Z"/>
+                    </svg>
+                </div>
+
+                <div class="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
+                    <div class="space-y-3 text-center lg:text-left">
+                        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-xs md:text-sm font-semibold tracking-wide">
+                            <span>🌿 Landasan Ilmiah Nutrisi 3 Jurnal Nasional</span>
+                            <span class="bg-amber-400 text-slate-900 px-2 py-0.5 rounded-full text-xs font-bold">Resmi</span>
+                        </div>
+                        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight drop-shadow-sm">
+                            NutriTrack Journal AI <span class="inline-block animate-bounce">🥑🍎🥦</span>
+                        </h1>
+                        <p class="text-emerald-50 text-sm md:text-base max-w-2xl leading-relaxed">
+                            Jurnal Nutrisi Terintegrasi Berbasis Riset: Estimasi Beban Kerja Detak Jantung, Kebutuhan BMR/BBI, Rentang Interval Makan T1-T6, serta Keseimbangan pH Asiditas dengan Buah & Sayur Basa.
+                        </p>
+                    </div>
+
+                    <!-- Quick Alkaline pH Badge -->
+                    <div class="bg-white/15 backdrop-blur-lg border border-white/30 rounded-2xl p-4 text-center max-w-xs w-full shadow-lg hover:scale-105 transition duration-300">
+                        <div class="text-2xl mb-1">🍎🥑🍊</div>
+                        <h4 class="font-bold text-sm text-amber-200">Panduan pH Basa Buah</h4>
+                        <p class="text-xs text-white/90 mt-1">
+                            Buah berkadar pH 7.3 - 7.5 membantu menetralkan asam laktat setelah latihan fisik (Hermansyah & Mas'ud, 2018).
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quick Fruit & Vegetable Preset Bar -->
+                <div class="mt-6 pt-5 border-t border-white/20">
+                    <p class="text-xs font-semibold text-emerald-100 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-bolt text-amber-300"></i> Tambah Cepat Buah & Sayur Segar (Presisi Nutrisi):
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="quickAddPreset('Apel Fuji 🍎', 95, 25, 0.5, 0.3)" class="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-medium text-white border border-white/30 transition flex items-center gap-1.5 hover:scale-105">
+                            <span>🍎</span> Apel Fuji (95 kcal)
+                        </button>
+                        <button onclick="quickAddPreset('Alpukat Segar 🥑', 160, 9, 2, 15)" class="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-medium text-white border border-white/30 transition flex items-center gap-1.5 hover:scale-105">
+                            <span>🥑</span> Alpukat Segar (160 kcal)
+                        </button>
+                        <button onclick="quickAddPreset('Brokoli Kukus 🥦', 55, 11, 3.7, 0.6)" class="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-medium text-white border border-white/30 transition flex items-center gap-1.5 hover:scale-105">
+                            <span>🥦</span> Brokoli Kukus (55 kcal)
+                        </button>
+                        <button onclick="quickAddPreset('Pisang Ambon 🍌', 105, 27, 1.3, 0.3)" class="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-medium text-white border border-white/30 transition flex items-center gap-1.5 hover:scale-105">
+                            <span>🍌</span> Pisang Ambon (105 kcal)
+                        </button>
+                        <button onclick="quickAddPreset('Jeruk Manis 🍊', 62, 15, 1.2, 0.2)" class="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-medium text-white border border-white/30 transition flex items-center gap-1.5 hover:scale-105">
+                            <span>🍊</span> Jeruk Manis (62 kcal)
+                        </button>
+                        <button onclick="quickAddPreset('Wortel & Bayam 🥕🥬', 45, 10, 2.5, 0.4)" class="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-medium text-white border border-white/30 transition flex items-center gap-1.5 hover:scale-105">
+                            <span>🥕</span> Wortel & Bayam (45 kcal)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- NAVIGATION TABS -->
+        <nav class="mb-8">
+            <div class="glass-card rounded-2xl p-2 flex flex-wrap gap-2 justify-center sm:justify-start">
+                <button onclick="switchTab('tab-calculator')" id="btn-tab-calculator" class="tab-btn active px-5 py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-lg"></i>
+                    <span>🥗 Kalkulator Nutrisi & BBI</span>
+                </button>
+                <button onclick="switchTab('tab-journal')" id="btn-tab-journal" class="tab-btn px-5 py-3 rounded-xl font-semibold text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 text-sm transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-lg"></i>
+                    <span>🍎 Jurnal Makanan & Aktivitas</span>
+                </button>
+                <button onclick="switchTab('tab-schedule')" id="btn-tab-schedule" class="tab-btn px-5 py-3 rounded-xl font-semibold text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 text-sm transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+                    <span>📊 Jadwal 6 Interval (T1-T6)</span>
+                </button>
+                <button onclick="switchTab('tab-research')" id="btn-tab-research" class="tab-btn px-5 py-3 rounded-xl font-semibold text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 text-sm transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-lg"></i>
+                    <span>📚 Rujukan Ilmiah & Panduan pH</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- TAB 1: KALKULATOR NUTRISI & BBI -->
+        <div id="tab-calculator" class="tab-content block space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Form Inputs Card -->
+                <div class="lg:col-span-5 glass-card-green rounded-3xl p-6 border-leaf-500/20">
+                    <div class="flex items-center justify-between mb-5">
+                        <h2 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                            <span class="text-2xl">🥑</span> Parameter Fisik User
+                        </h2>
+                        <span class="text-xs bg-leaf-500 text-white font-bold px-3 py-1 rounded-full">Step 1</span>
+                    </div>
+
+                    <form id="calc-form" onsubmit="calculateNutrition(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Jenis Kelamin</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center justify-center gap-2 p-3 rounded-xl border border-emerald-200 bg-white cursor-pointer hover:border-emerald-500 transition font-semibold text-sm">
+                                    <input type="radio" name="gender" value="male" checked class="accent-emerald-600">
+                                    <span>👨 Pria</span>
+                                </label>
+                                <label class="flex items-center justify-center gap-2 p-3 rounded-xl border border-emerald-200 bg-white cursor-pointer hover:border-emerald-500 transition font-semibold text-sm">
+                                    <input type="radio" name="gender" value="female" class="accent-emerald-600">
+                                    <span>👩 Wanita</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Usia (Tahun)</label>
+                                <input type="number" id="age" value="25" min="10" max="90" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-800 font-bold bg-white/80">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Tinggi Badan (cm)</label>
+                                <input type="number" id="height" value="170" min="100" max="230" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-800 font-bold bg-white/80">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Berat Badan (kg)</label>
+                                <input type="number" id="weight" value="68" min="30" max="200" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-800 font-bold bg-white/80">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Heart Rate Istirahat (BPM)
+                                </label>
+                                <input type="number" id="heartRate" value="78" min="40" max="200" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-800 font-bold bg-white/80">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                Aktivitas / Beban Kerja (Hermansyah 2018)
+                            </label>
+                            <select id="activity" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-800 font-semibold bg-white/80">
+                                <option value="light">Ringan (< 100 bpm) - Multiplier 1.6 x MB</option>
+                                <option value="moderate" selected>Sedang (100 - 125 bpm) - Multiplier 2.5 x MB</option>
+                                <option value="heavy">Berat (125 - 150 bpm) - Multiplier 3.0 x MB</option>
+                                <option value="very_heavy">Sangat Berat (150 - 175 bpm) - Multiplier 3.0 x MB</option>
+                                <option value="ext_heavy">Sangat Berat Sekali (> 175 bpm) - Multiplier 3.0 x MB</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                Model Riset BMR Utama
+                            </label>
+                            <select id="modelChoice" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-800 font-semibold bg-white/80">
+                                <option value="hermansyah" selected>Hermansyah & Mas'ud (2018) - Khusus Pria BMR Formula</option>
+                                <option value="harris">Lestari & Widyastiti (2016) - Harris Benedict + Multiplier %</option>
+                                <option value="bisma">Bisma et al. (2021) - BBI Broca Formula & Kemenkes RI</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-500 via-green-600 to-emerald-700 text-white font-extrabold text-base shadow-lg hover:shadow-emerald-500/30 transition hover:scale-[1.01] flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Hitung Nutrisi Presisi
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Results Output Card -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="glass-card rounded-3xl p-6 relative overflow-hidden border-2 border-emerald-500/20">
+                        <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <span class="text-2xl">🎯</span> Hasil Analisis Nutrisi & Body Composition
+                            </h3>
+                            <span id="active-model-badge" class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">
+                                Hermansyah & Mas'ud (2018)
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                            <!-- BMR Card -->
+                            <div class="bg-gradient-to-br from-emerald-50 to-green-100/60 p-4 rounded-2xl border border-emerald-200 text-center">
+                                <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider block mb-1">BMR Dasar</span>
+                                <span id="res-bmr" class="text-2xl font-black text-emerald-700">1,612</span>
+                                <span class="text-[10px] text-emerald-600 block mt-0.5">kcal/hari</span>
+                            </div>
+
+                            <!-- TDEE Card -->
+                            <div class="bg-gradient-to-br from-amber-50 to-orange-100/60 p-4 rounded-2xl border border-amber-200 text-center">
+                                <span class="text-xs font-bold text-amber-800 uppercase tracking-wider block mb-1">Target TDEE</span>
+                                <span id="res-tdee" class="text-2xl font-black text-amber-600">2,580</span>
+                                <span class="text-[10px] text-amber-600 block mt-0.5">kcal/hari</span>
+                            </div>
+
+                            <!-- BBI Card -->
+                            <div class="bg-gradient-to-br from-blue-50 to-cyan-100/60 p-4 rounded-2xl border border-blue-200 text-center">
+                                <span class="text-xs font-bold text-blue-800 uppercase tracking-wider block mb-1">BBI (Ideal)</span>
+                                <span id="res-bbi" class="text-2xl font-black text-blue-700">63.0</span>
+                                <span class="text-[10px] text-blue-600 block mt-0.5">kg (Broca)</span>
+                            </div>
+
+                            <!-- BMI Card -->
+                            <div class="bg-gradient-to-br from-purple-50 to-purple-100/60 p-4 rounded-2xl border border-purple-200 text-center">
+                                <span class="text-xs font-bold text-purple-800 uppercase tracking-wider block mb-1">IMT / BMI</span>
+                                <span id="res-bmi" class="text-2xl font-black text-purple-700">23.5</span>
+                                <span id="res-bmi-status" class="text-[11px] font-bold text-purple-600 block mt-0.5">Normal</span>
+                            </div>
+                        </div>
+
+                        <!-- Macro Target Breakdown Bars -->
+                        <h4 class="font-bold text-sm text-slate-700 mb-3 flex items-center justify-between">
+                            <span>🥗 Target Makronutrisi Harian Berdasar Jurnal:</span>
+                            <span class="text-xs text-slate-500 font-normal">Sesuai Batas Aman Nutrisi</span>
+                        </h4>
+
+                        <div class="space-y-3">
+                            <!-- Carbs Target -->
+                            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                                <div class="flex justify-between items-center text-xs font-bold mb-1">
+                                    <span class="text-amber-800 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-wheat-awn text-amber-500"></i> Karbohidrat (55% TDEE / min 300g)
+                                    </span>
+                                    <span id="target-carb-text" class="text-amber-700">354.8g / hari</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                    <div id="target-carb-bar" class="bg-gradient-to-r from-amber-400 to-orange-500 h-2.5 rounded-full" style="width: 60%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Protein Target -->
+                            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                                <div class="flex justify-between items-center text-xs font-bold mb-1">
+                                    <span class="text-emerald-800 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-drumstick-bite text-emerald-500"></i> Protein (15% TDEE / min 60g)
+                                    </span>
+                                    <span id="target-protein-text" class="text-emerald-700">96.8g / hari</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                    <div id="target-protein-bar" class="bg-gradient-to-r from-emerald-400 to-green-600 h-2.5 rounded-full" style="width: 45%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Fat Target -->
+                            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                                <div class="flex justify-between items-center text-xs font-bold mb-1">
+                                    <span class="text-rose-800 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-avocado text-rose-500"></i> Lemak (Batas Atas Aman Max 62g - Journal 2)
+                                    </span>
+                                    <span id="target-fat-text" class="text-rose-700">57.3g / hari (Aman)</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                    <div id="target-fat-bar" class="bg-gradient-to-r from-rose-400 to-red-500 h-2.5 rounded-full" style="width: 80%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Special Scientific Recommendation Badges -->
+                        <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                                <div class="text-2xl">🥛</div>
+                                <div>
+                                    <h5 class="text-xs font-bold text-amber-900">Rekomendasi Susu (Interval T2)</h5>
+                                    <p class="text-[11px] text-amber-800 mt-0.5">
+                                        Riset Hermansyah (2018) merekomendasikan asupan susu pada interval T2 (09:00 - 11:00) untuk pemulihan glikogen dan otot.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
+                                <div class="text-2xl">🥑</div>
+                                <div>
+                                    <h5 class="text-xs font-bold text-emerald-900">Keseimbangan pH Asiditas</h5>
+                                    <p class="text-[11px] text-emerald-800 mt-0.5">
+                                        Konsumsi buah & sayur basa (pH 7.3 - 7.5) seperti Alpukat, Apel, & Brokoli untuk menetralkan asam laktat latihan.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB 2: JURNAL MAKANAN & AKTIVITAS -->
+        <div id="tab-journal" class="tab-content hidden space-y-6">
+            
+            <!-- Warning Banner Container for Scientific Limits -->
+            <div id="warning-container" class="space-y-3"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Food / Exercise Input Form -->
+                <div class="lg:col-span-5 glass-card-orange rounded-3xl p-6">
+                    <h3 class="text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🍎</span> Input Log Makanan & Latihan
+                    </h3>
+
+                    <!-- Quick Preset Fruit & Veggie Menu -->
+                    <div class="mb-5 bg-white/70 p-3.5 rounded-2xl border border-orange-200/80">
+                        <label class="block text-xs font-bold text-orange-900 uppercase mb-2">Pilih Menu Sehat Cepat (Indonesian Fruit/Veg):</label>
+                        <select id="quickPresetSelect" onchange="applyPresetSelection()" class="w-full px-3 py-2 rounded-xl text-xs font-semibold border border-orange-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                            <option value="">-- Pilih Preset Makanan / Buah --</option>
+                            <option value="Brokoli Kukus 🥦|55|11|3.7|0.6">Brokoli Kukus 🥦 (55 kcal | C:11g P:3.7g F:0.6g)</option>
+                            <option value="Wortel & Bayam 🥕🥬|45|10|2.5|0.4">Wortel & Bayam 🥕🥬 (45 kcal | C:10g P:2.5g F:0.4g)</option>
+                            <option value="Pisang Ambon 🍌|105|27|1.3|0.3">Pisang Ambon 🍌 (105 kcal | C:27g P:1.3g F:0.3g)</option>
+                            <option value="Apel Fuji 🍎|95|25|0.5|0.3">Apel Fuji 🍎 (95 kcal | C:25g P:0.5g F:0.3g)</option>
+                            <option value="Alpukat Segar 🥑|160|9|2|15">Alpukat Segar 🥑 (160 kcal | C:9g P:2g F:15g)</option>
+                            <option value="Jeruk Manis 🍊|62|15|1.2|0.2">Jeruk Manis 🍊 (62 kcal | C:15g P:1.2g F:0.2g)</option>
+                            <option value="Buah Naga Segar 🍈|60|13|1.2|0.5">Buah Naga Segar 🍈 (60 kcal | C:13g P:1.2g F:0.5g)</option>
+                            <option value="Pepaya Potong 🥭|59|15|0.9|0.3">Pepaya Potong 🥭 (59 kcal | C:15g P:0.9g F:0.3g)</option>
+                            <option value="Nasi Putih 🍚|204|45|4.2|0.4">Nasi Putih (1 Porsi) 🍚 (204 kcal | C:45g P:4.2g)</option>
+                            <option value="Dada Ayam Panggang 🍗|165|0|31|3.6">Dada Ayam Panggang 🍗 (165 kcal | C:0g P:31g)</option>
+                            <option value="Susu UHT Segar 🥛|150|12|8|8">Susu UHT Segar (T2 Snack) 🥛 (150 kcal | C:12g P:8g)</option>
+                            <option value="Ikan Panggang 🐟|180|0|26|8">Ikan Panggang 🐟 (180 kcal | C:0g P:26g F:8g)</option>
+                        </select>
+                    </div>
+
+                    <form id="food-form" onsubmit="addFoodLog(event)" class="space-y-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Makanan / Minuman / Aktivitas</label>
+                            <input type="text" id="foodName" placeholder="Contoh: Apel Fuji Segar 🍎" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold focus:ring-2 focus:ring-orange-400 focus:outline-none bg-white">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kalori (kcal)</label>
+                                <input type="number" id="foodCalories" placeholder="95" required min="0" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold focus:ring-2 focus:ring-orange-400 focus:outline-none bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Interval Waktu (T1-T6)</label>
+                                <select id="foodInterval" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
+                                    <option value="T1">T1 (06:00 - 08:00)</option>
+                                    <option value="T2">T2 (09:00 - 11:00) 🥛 Susu</option>
+                                    <option value="T3">T3 (12:00 - 14:00)</option>
+                                    <option value="T4">T4 (15:00 - 17:00)</option>
+                                    <option value="T5">T5 (18:00 - 20:00)</option>
+                                    <option value="T6">T6 (21:00 - 23:00)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-amber-800 uppercase mb-1">Karbo (g)</label>
+                                <input type="number" id="foodCarbs" step="0.1" placeholder="25" min="0" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-emerald-800 uppercase mb-1">Protein (g)</label>
+                                <input type="number" id="foodProtein" step="0.1" placeholder="0.5" min="0" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-rose-800 uppercase mb-1">Lemak (g)</label>
+                                <input type="number" id="foodFat" step="0.1" placeholder="0.3" min="0" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-white">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-extrabold text-sm shadow-md hover:shadow-orange-500/20 transition hover:scale-[1.01] flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-plus-circle"></i> Catat Ke Jurnal Nutrisi
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Summary & Log List -->
+                <div class="lg:col-span-7 space-y-6">
+                    
+                    <!-- Real-Time Macro Tracker Cards -->
+                    <div class="glass-card rounded-3xl p-5 border border-emerald-500/20">
+                        <h4 class="text-sm font-extrabold text-slate-800 mb-3 flex items-center justify-between">
+                            <span>📊 Ringkasan Konsumsi Harian Saat Ini</span>
+                            <span id="log-count-badge" class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">0 Item</span>
+                        </h4>
+
+                        <div class="grid grid-cols-4 gap-3 text-center">
+                            <div class="bg-amber-50/80 p-3 rounded-2xl border border-amber-200">
+                                <span class="text-[10px] font-bold text-amber-800 uppercase block">Total Kalori</span>
+                                <span id="log-total-cal" class="text-xl font-black text-amber-600">0</span>
+                                <span class="text-[10px] text-slate-500 block">/ <span id="log-target-cal">2580</span> kcal</span>
+                            </div>
+                            <div class="bg-orange-50/80 p-3 rounded-2xl border border-orange-200">
+                                <span class="text-[10px] font-bold text-orange-800 uppercase block">Karbohidrat</span>
+                                <span id="log-total-carb" class="text-xl font-black text-orange-600">0g</span>
+                                <span class="text-[10px] text-slate-500 block">/ <span id="log-target-carb">355g</span></span>
+                            </div>
+                            <div class="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200">
+                                <span class="text-[10px] font-bold text-emerald-800 uppercase block">Protein</span>
+                                <span id="log-total-protein" class="text-xl font-black text-emerald-600">0g</span>
+                                <span class="text-[10px] text-slate-500 block">/ <span id="log-target-protein">97g</span></span>
+                            </div>
+                            <div class="bg-rose-50/80 p-3 rounded-2xl border border-rose-200">
+                                <span class="text-[10px] font-bold text-rose-800 uppercase block">Lemak</span>
+                                <span id="log-total-fat" class="text-xl font-black text-rose-600">0g</span>
+                                <span class="text-[10px] text-rose-600 font-bold block">Max 62g</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Log Table -->
+                    <div class="glass-card rounded-3xl p-5 overflow-hidden border border-slate-200/80">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold text-slate-800">📋 Daftar Catatan Makanan</h4>
+                            <button onclick="clearAllLogs()" class="text-xs text-rose-600 font-semibold hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-trash"></i> Hapus Semua
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-200 bg-slate-100/70 text-slate-600 font-extrabold uppercase">
+                                        <th class="p-2.5 rounded-l-xl">Interval</th>
+                                        <th class="p-2.5">Menu / Makanan</th>
+                                        <th class="p-2.5 text-center">Kalori</th>
+                                        <th class="p-2.5 text-center">Karbo</th>
+                                        <th class="p-2.5 text-center">Protein</th>
+                                        <th class="p-2.5 text-center">Lemak</th>
+                                        <th class="p-2.5 text-right rounded-r-xl">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="food-log-table-body" class="divide-y divide-slate-100 font-medium">
+                                    <!-- Dynamic Rows Rendered Here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB 3: JADWAL 6 INTERVAL (T1-T6) -->
+        <div id="tab-schedule" class="tab-content hidden space-y-6">
+            <div class="glass-card rounded-3xl p-6 border border-emerald-500/20">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 border-b border-slate-100 pb-4">
+                    <div>
+                        <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                            <span class="text-2xl">⏰</span> Jadwal Asupan 6 Interval (Lestari & Widyastiti, 2016)
+                        </h3>
+                        <p class="text-xs text-slate-600 mt-1">
+                            Distribusikan makanan Anda ke dalam 6 interval waktu untuk menjaga tingkat metabolisme stabil dan penyerapan gizi optimal.
+                        </p>
+                    </div>
+                    <span class="px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
+                        Visualisasi Waktu Makan T1 - T6
+                    </span>
+                </div>
+
+                <!-- Interval Chart Canvas -->
+                <div class="bg-white/80 p-4 rounded-2xl border border-slate-200/80 mb-8 shadow-sm">
+                    <div class="h-64 sm:h-80 w-full">
+                        <canvas id="intervalChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 6 Interval Meal Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- T1 -->
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-amber-500 text-white font-extrabold text-xs">Interval T1</span>
+                            <span class="text-xs font-bold text-amber-900">06:00 - 08:00</span>
+                        </div>
+                        <h5 class="font-bold text-sm text-slate-800 mb-1">🌅 Sarapan Utama Pagi</h5>
+                        <p class="text-xs text-slate-600">
+                            Karbohidrat kompleks & serat buah (misal: Apel Fuji 🍎 / Pisang 🍌 + Telur Rebus). Membuka metabolisme pagi.
+                        </p>
+                    </div>
+
+                    <!-- T2 Milk Recommendation Special Card -->
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 shadow-md">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-blue-600 text-white font-extrabold text-xs flex items-center gap-1">
+                                <span>🥛</span> Interval T2 (Susu)
+                            </span>
+                            <span class="text-xs font-bold text-blue-900">09:00 - 11:00</span>
+                        </div>
+                        <h5 class="font-bold text-sm text-blue-950 mb-1">🥛 Snack Pagi & Susu UHT Segar</h5>
+                        <p class="text-xs text-blue-900 font-medium">
+                            <strong>Riset Hermansyah (2018):</strong> Waktu utama asupan susu & buah ringan untuk mengisi kembali glikogen otot sebelum makan siang.
+                        </p>
+                    </div>
+
+                    <!-- T3 -->
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-extrabold text-xs">Interval T3</span>
+                            <span class="text-xs font-bold text-emerald-900">12:00 - 14:00</span>
+                        </div>
+                        <h5 class="font-bold text-sm text-slate-800 mb-1">☀️ Makan Siang Lengkap</h5>
+                        <p class="text-xs text-slate-600">
+                            Porsi makan utama terbesar: Nasi Putih/Merah 🍚, Dada Ayam/Ikan 🍗, serta Sayur Hijau Segar (Bayam & Wortel 🥕🥬).
+                        </p>
+                    </div>
+
+                    <!-- T4 -->
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-purple-600 text-white font-extrabold text-xs">Interval T4</span>
+                            <span class="text-xs font-bold text-purple-900">15:00 - 17:00</span>
+                        </div>
+                        <h5 class="font-bold text-sm text-slate-800 mb-1">🥑 Snack Sore Buah Basa</h5>
+                        <p class="text-xs text-slate-600">
+                            Waktu ideal konsumsi Alpukat Segar 🥑 / Pepaya 🥭 untuk asupan serat dan penyeimbang pH basa sebelum latihan sore.
+                        </p>
+                    </div>
+
+                    <!-- T5 -->
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-orange-600 text-white font-extrabold text-xs">Interval T5</span>
+                            <span class="text-xs font-bold text-orange-900">18:00 - 20:00</span>
+                        </div>
+                        <h5 class="font-bold text-sm text-slate-800 mb-1">🌙 Makan Malam Seimbang</h5>
+                        <p class="text-xs text-slate-600">
+                            Protein tinggi & karbo rendah (Ikan Panggang 🐟, Sup Brokoli 🥦). Menghindari penumpukan lemak berlebih.
+                        </p>
+                    </div>
+
+                    <!-- T6 -->
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-100 to-emerald-50 border border-slate-300">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-700 text-white font-extrabold text-xs">Interval T6</span>
+                            <span class="text-xs font-bold text-slate-800">21:00 - 23:00</span>
+                        </div>
+                        <h5 class="font-bold text-sm text-slate-800 mb-1">🛌 Pemulihan Malam</h5>
+                        <p class="text-xs text-slate-600">
+                            Minuman hangat ringan atau air lemon/buah naga 🍈 jika lapar. Membantu regenerasi sel saat tidur.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB 4: RUJUKAN ILMIAH & PANDUAN pH -->
+        <div id="tab-research" class="tab-content hidden space-y-6">
+            <div class="glass-card rounded-3xl p-6 border border-leaf-500/20">
+                <h3 class="text-2xl font-extrabold text-slate-800 mb-2 flex items-center gap-2">
+                    <span>📚</span> Fondasi Riset Ilmiah & Formula Matematika Nutrisi
+                </h3>
+                <p class="text-sm text-slate-600 mb-6">
+                    Aplikasi ini dirancang berdasarkan sintesis 3 jurnal penelitian ilmiah nasional di Indonesia untuk menjamin akurasi metodologi nutrisi.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- Journal 1 Card -->
+                    <div class="p-5 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-extrabold px-3 py-1 bg-emerald-600 text-white rounded-full">Jurnal 1</span>
+                            <span class="text-[11px] font-semibold text-emerald-800">2018</span>
+                        </div>
+                        <h4 class="font-bold text-sm text-emerald-950">Hermansyah & Mas'ud (2018)</h4>
+                        <p class="text-xs text-slate-700 leading-relaxed">
+                            <strong>Fokus:</strong> Formula BMR Pria, Klasifikasi Beban Kerja Detak Jantung, Rasio Makronutrisi (Karbo 50-65%, Protein 10-15%, Lemak 20-30%), serta rekomendasi asupan Susu di Interval T2.
+                        </p>
+                        <div class="bg-white/80 p-3 rounded-xl text-[11px] font-mono text-slate-800 border border-emerald-200">
+                            BMR Pria = 66.42 + (13.75 × BB) + (5 × TB) - (6.78 × Umur)
+                        </div>
+                        <ul class="text-[11px] text-emerald-900 space-y-1 list-disc list-inside">
+                            <li>Ringan (<100 bpm): 1.6 x MB</li>
+                            <li>Sedang (100-125 bpm): 2.5 x MB</li>
+                            <li>Berat / Sangat Berat (>125 bpm): 3.0 x MB</li>
+                        </ul>
+                    </div>
+
+                    <!-- Journal 2 Card -->
+                    <div class="p-5 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-extrabold px-3 py-1 bg-amber-600 text-white rounded-full">Jurnal 2</span>
+                            <span class="text-[11px] font-semibold text-amber-800">2016</span>
+                        </div>
+                        <h4 class="font-bold text-sm text-amber-950">Lestari & Widyastiti (2016)</h4>
+                        <p class="text-xs text-slate-700 leading-relaxed">
+                            <strong>Fokus:</strong> Persamaan Harris-Benedict Pria/Wanita, Batas Atas Lemak ≤ 62g/hari, Target Karbohidrat ≥ 300g, Protein ≥ 60g, dan Pembagian 6 Waktu Interval (T1 - T6).
+                        </p>
+                        <div class="bg-white/80 p-3 rounded-xl text-[11px] font-mono text-slate-800 border border-amber-200">
+                            BMR Pria = 66.5 + (13.75×BB) + (5.003×TB) - (6.775×Umur)<br>
+                            BMR Wanita = 655.1 + (9.563×BB) + (1.850×TB) - (4.676×Umur)
+                        </div>
+                        <ul class="text-[11px] text-amber-900 space-y-1 list-disc list-inside">
+                            <li>Batas Lemak Maksimal: 62 Gram / Hari</li>
+                            <li>Activity Factor: +30%, +40%, +50%</li>
+                        </ul>
+                    </div>
+
+                    <!-- Journal 3 Card -->
+                    <div class="p-5 rounded-2xl bg-purple-50/80 border border-purple-200 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-extrabold px-3 py-1 bg-purple-600 text-white rounded-full">Jurnal 3</span>
+                            <span class="text-[11px] font-semibold text-purple-800">2021</span>
+                        </div>
+                        <h4 class="font-bold text-sm text-purple-950">Bisma et al. (2021)</h4>
+                        <p class="text-xs text-slate-700 leading-relaxed">
+                            <strong>Fokus:</strong> Formula Berat Badan Ideal (BBI) Modifikasi Broca & Kategori Indeks Massa Tubuh (IMT / BMI) Standar Kemenkes RI.
+                        </p>
+                        <div class="bg-white/80 p-3 rounded-xl text-[11px] font-mono text-slate-800 border border-purple-200">
+                            BBI = (TB - 100) - 0.10 × (TB - 100)
+                        </div>
+                        <div class="text-[11px] text-purple-900 space-y-1">
+                            <p><strong>Standar IMT Kemenkes RI:</strong></p>
+                            <p>• Sangat Kurus: < 17.0 | Kurus: 17.0 - 18.4</p>
+                            <p>• Normal: 18.5 - 25.0</p>
+                            <p>• Gemuk: 25.1 - 27.0 | Obesitas: > 27.0</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Deep Dive pH Balance Section -->
+                <div class="mt-8 p-6 rounded-3xl bg-gradient-to-r from-emerald-600 via-green-600 to-teal-700 text-white shadow-xl">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div class="space-y-2">
+                            <h4 class="text-xl font-extrabold flex items-center gap-2">
+                                <span>🍎🥑🍊</span> Mengapa Buah & Sayur Basa (pH 7.3 - 7.5) Sangat Penting?
+                            </h4>
+                            <p class="text-xs text-emerald-100 leading-relaxed max-w-3xl">
+                                Selama aktivitas fisik intensif, pembentukan asam laktat dalam jaringan otot memicu kondisi asiditas metabolik ringan yang menyebabkan kelelahan otot. Menurut penelitian Hermansyah & Mas'ud (2018), mengonsumsi buah dan sayur berkadar pH Basa (seperti Alpukat, Apel, Jeruk Manis, Brokoli, & Bayam) membantu menetralkan asam laktat darah, mempercepat rehidrasi, serta mengoptimalkan pemulihan energi seluler secara alami.
+                            </p>
+                        </div>
+                        <div class="bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/30 text-center shrink-0">
+                            <span class="text-2xl block mb-0.5">🌿</span>
+                            <span class="text-xs font-bold text-amber-200">Target pH Tubuh</span>
+                            <span class="text-lg font-black block">7.35 - 7.45</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Global Application State
+        let currentCalculations = {
+            bmr: 1612,
+            tdee: 2580,
+            bbi: 63.0,
+            bmi: 23.5,
+            bmiStatus: "Normal",
+            targetCarbs: 354.8,
+            targetProtein: 96.8,
+            targetFat: 57.3
+        };
+
+        let foodLogs = [
+            { id: 1, name: "Apel Fuji Segar 🍎", calories: 95, carbs: 25, protein: 0.5, fat: 0.3, interval: "T1" },
+            { id: 2, name: "Susu UHT Segar 🥛", calories: 150, carbs: 12, protein: 8, fat: 8, interval: "T2" },
+            { id: 3, name: "Nasi Putih & Dada Ayam 🍚🍗", calories: 369, carbs: 45, protein: 35.2, fat: 4, interval: "T3" },
+            { id: 4, name: "Alpukat Segar 🥑", calories: 160, carbs: 9, protein: 2, fat: 15, interval: "T4" }
+        ];
+
+        let intervalChartInstance = null;
+
+        // Initialize App on DOM Load
+        window.onload = function() {
+            calculateNutrition();
+            renderFoodLogs();
+            initChart();
+        };
+
+        // Tab Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-slate-700');
+            });
+
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.add('active');
+            activeBtn.classList.remove('text-slate-700');
+
+            if(tabId === 'tab-schedule') {
+                setTimeout(() => {
+                    updateChart();
+                }, 100);
+            }
+        }
+
+        // Calculate Nutrition based on Journal Formulas
+        function calculateNutrition(e) {
+            if(e) e.preventDefault();
+
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            const age = parseFloat(document.getElementById('age').value) || 25;
+            const height = parseFloat(document.getElementById('height').value) || 170;
+            const weight = parseFloat(document.getElementById('weight').value) || 68;
+            const heartRate = parseFloat(document.getElementById('heartRate').value) || 78;
+            const activity = document.getElementById('activity').value;
+            const modelChoice = document.getElementById('modelChoice').value;
+
+            let bmr = 0;
+            let tdee = 0;
+
+            // 1. Journal 1: Hermansyah & Mas'ud (2018) Formula
+            if (modelChoice === 'hermansyah' || (gender === 'male' && modelChoice !== 'harris')) {
+                bmr = 66.42 + (13.75 * weight) + (5 * height) - (6.78 * age);
+                document.getElementById('active-model-badge').innerText = "Hermansyah & Mas'ud (2018)";
+            } 
+            // 2. Journal 2: Lestari & Widyastiti (2016) Harris-Benedict
+            else {
+                if (gender === 'male') {
+                    bmr = 66.5 + (13.75 * weight) + (5.003 * height) - (6.775 * age);
+                } else {
+                    bmr = 655.1 + (9.563 * weight) + (1.850 * height) - (4.676 * age);
+                }
+                document.getElementById('active-model-badge').innerText = "Lestari & Widyastiti (2016)";
+            }
+
+            // Heart Rate Multiplier (Hermansyah 2018) vs Activity Factor
+            let multiplier = 1.6;
+            if (activity === 'light') multiplier = 1.6;
+            else if (activity === 'moderate') multiplier = 2.5;
+            else if (activity === 'heavy' || activity === 'very_heavy' || activity === 'ext_heavy') multiplier = 3.0;
+
+            tdee = bmr * multiplier;
+
+            // 3. Journal 3: Bisma et al. (2021) BBI Formula & Kemenkes BMI
+            const bbi = (height - 100) - (0.10 * (height - 100));
+            const bmi = weight / ((height / 100) * (height / 100));
+
+            let bmiCategory = "Normal";
+            if (bmi < 17.0) bmiCategory = "Sangat Kurus";
+            else if (bmi >= 17.0 && bmi <= 18.4) bmiCategory = "Kurus";
+            else if (bmi >= 18.5 && bmi <= 25.0) bmiCategory = "Normal";
+            else if (bmi >= 25.1 && bmi <= 27.0) bmiCategory = "Gemuk";
+            else bmiCategory = "Obesitas";
+
+            // Macro Calculations (Hermansyah: Carbs 55%, Protein 15%, Fat 20-30%)
+            const targetCarbs = (tdee * 0.55) / 4;
+            const targetProtein = Math.max(60, (tdee * 0.15) / 4); // Min 60g (Lestari 2016)
+            const rawFat = (tdee * 0.25) / 9;
+            const targetFat = Math.min(62, rawFat); // Upper limit <= 62g (Lestari 2016)
+
+            // Update State
+            currentCalculations = {
+                bmr: Math.round(bmr),
+                tdee: Math.round(tdee),
+                bbi: bbi.toFixed(1),
+                bmi: bmi.toFixed(1),
+                bmiStatus: bmiCategory,
+                targetCarbs: parseFloat(targetCarbs.toFixed(1)),
+                targetProtein: parseFloat(targetProtein.toFixed(1)),
+                targetFat: parseFloat(targetFat.toFixed(1))
+            };
+
+            // Render Results to UI
+            document.getElementById('res-bmr').innerText = currentCalculations.bmr.toLocaleString();
+            document.getElementById('res-tdee').innerText = currentCalculations.tdee.toLocaleString();
+            document.getElementById('res-bbi').innerText = currentCalculations.bbi;
+            document.getElementById('res-bmi').innerText = currentCalculations.bmi;
+            document.getElementById('res-bmi-status').innerText = currentCalculations.bmiStatus;
+
+            document.getElementById('target-carb-text').innerText = `${currentCalculations.targetCarbs}g / hari`;
+            document.getElementById('target-protein-text').innerText = `${currentCalculations.targetProtein}g / hari`;
+            document.getElementById('target-fat-text').innerText = `${currentCalculations.targetFat}g / hari (Max 62g)`;
+
+            document.getElementById('log-target-cal').innerText = currentCalculations.tdee;
+            document.getElementById('log-target-carb').innerText = `${currentCalculations.targetCarbs}g`;
+            document.getElementById('log-target-protein').innerText = `${currentCalculations.targetProtein}g`;
+
+            checkScientificWarnings();
+        }
+
+        // Quick Fruit & Veggie Preset Handlers
+        function quickAddPreset(name, calories, carbs, protein, fat) {
+            foodLogs.push({
+                id: Date.now(),
+                name: name,
+                calories: calories,
+                carbs: carbs,
+                protein: protein,
+                fat: fat,
+                interval: "T2"
+            });
+            renderFoodLogs();
+            switchTab('tab-journal');
+        }
+
+        function applyPresetSelection() {
+            const select = document.getElementById('quickPresetSelect');
+            if(!select.value) return;
+
+            const [name, cal, carb, prot, fat] = select.value.split('|');
+            document.getElementById('foodName').value = name;
+            document.getElementById('foodCalories').value = cal;
+            document.getElementById('foodCarbs').value = carb;
+            document.getElementById('foodProtein').value = prot;
+            document.getElementById('foodFat').value = fat;
+        }
+
+        // Add Custom Food Log
+        function addFoodLog(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('foodName').value;
+            const calories = parseFloat(document.getElementById('foodCalories').value) || 0;
+            const carbs = parseFloat(document.getElementById('foodCarbs').value) || 0;
+            const protein = parseFloat(document.getElementById('foodProtein').value) || 0;
+            const fat = parseFloat(document.getElementById('foodFat').value) || 0;
+            const interval = document.getElementById('foodInterval').value;
+
+            foodLogs.push({
+                id: Date.now(),
+                name: name,
+                calories: calories,
+                carbs: carbs,
+                protein: protein,
+                fat: fat,
+                interval: interval
+            });
+
+            // Reset Form
+            document.getElementById('food-form').reset();
+            document.getElementById('quickPresetSelect').value = "";
+
+            renderFoodLogs();
+        }
+
+        function deleteLog(id) {
+            foodLogs = foodLogs.filter(item => item.id !== id);
+            renderFoodLogs();
+        }
+
+        function clearAllLogs() {
+            foodLogs = [];
+            renderFoodLogs();
+        }
+
+        // Render Logs & Dynamic Warnings
+        function renderFoodLogs() {
+            const tbody = document.getElementById('food-log-table-body');
+            tbody.innerHTML = '';
+
+            let totalCal = 0;
+            let totalCarbs = 0;
+            let totalProtein = 0;
+            let totalFat = 0;
+
+            if (foodLogs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-6 text-slate-400 font-medium">
+                            Belum ada catatan makanan. Gunakan tombol preset di atas untuk menambah cepat! 🍎
+                        </td>
+                    </tr>
+                `;
+            } else {
+                foodLogs.forEach(item => {
+                    totalCal += item.calories;
+                    totalCarbs += item.carbs;
+                    totalProtein += item.protein;
+                    totalFat += item.fat;
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                    tr.innerHTML = `
+                        <td class="p-2.5">
+                            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">${item.interval}</span>
+                        </td>
+                        <td class="p-2.5 font-bold text-slate-800">${item.name}</td>
+                        <td class="p-2.5 text-center font-bold text-amber-600">${item.calories}</td>
+                        <td class="p-2.5 text-center text-slate-600">${item.carbs}g</td>
+                        <td class="p-2.5 text-center text-slate-600">${item.protein}g</td>
+                        <td class="p-2.5 text-center text-slate-600">${item.fat}g</td>
+                        <td class="p-2.5 text-right">
+                            <button onclick="deleteLog(${item.id})" class="text-rose-500 hover:text-rose-700 font-bold px-2 py-1 rounded hover:bg-rose-50">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Update UI Counters
+            document.getElementById('log-count-badge').innerText = `${foodLogs.length} Item`;
+            document.getElementById('log-total-cal').innerText = totalCal.toLocaleString();
+            document.getElementById('log-total-carb').innerText = `${totalCarbs.toFixed(1)}g`;
+            document.getElementById('log-total-protein').innerText = `${totalProtein.toFixed(1)}g`;
+            document.getElementById('log-total-fat').innerText = `${totalFat.toFixed(1)}g`;
+
+            checkScientificWarnings(totalCal, totalCarbs, totalProtein, totalFat);
+            updateChart();
+        }
+
+        // Evaluate Warnings based on Research Papers
+        function checkScientificWarnings(totalCal, totalCarbs, totalProtein, totalFat) {
+            const warningContainer = document.getElementById('warning-container');
+            warningContainer.innerHTML = '';
+
+            if(!totalCal) return;
+
+            // 1. Fat Limit Constraint (Lestari & Widyastiti 2016: Fat <= 62g)
+            if (totalFat > 62) {
+                warningContainer.innerHTML += `
+                    <div class="p-4 rounded-2xl bg-rose-50 border-2 border-rose-400 text-rose-900 flex items-start gap-3 shadow-md animate-pulse">
+                        <i class="fa-solid fa-triangle-exclamation text-xl text-rose-600 mt-0.5"></i>
+                        <div>
+                            <h5 class="font-extrabold text-xs uppercase tracking-wide">Peringatan Lemak Melebihi Batas Aman! (Lestari & Widyastiti 2016)</h5>
+                            <p class="text-xs mt-1">
+                                Asupan lemak Anda saat ini (<strong>${totalFat.toFixed(1)}g</strong>) melebihi batas rekomendasi jurnal maksimal <strong>62 Gram / hari</strong>. Kurangi makanan berminyak & prioritaskan lemak sehat dari Alpukat 🥑.
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 2. Carbohydrate Ratio Limit (Hermansyah & Mas'ud 2018: Carb <= 65% of total calories)
+            const carbCalories = totalCarbs * 4;
+            const carbRatio = totalCal > 0 ? (carbCalories / totalCal) * 100 : 0;
+            if (carbRatio > 65) {
+                warningContainer.innerHTML += `
+                    <div class="p-4 rounded-2xl bg-amber-50 border-2 border-amber-400 text-amber-900 flex items-start gap-3 shadow-md">
+                        <i class="fa-solid fa-circle-exclamation text-xl text-amber-600 mt-0.5"></i>
+                        <div>
+                            <h5 class="font-extrabold text-xs uppercase tracking-wide">Peringatan Rasio Karbohidrat Berlebih! (Hermansyah & Mas'ud 2018)</h5>
+                            <p class="text-xs mt-1">
+                                Porsi karbohidrat Anda menyumbang <strong>${carbRatio.toFixed(1)}%</strong> dari total kalori (Batas aman riset: 50% - 65%). Imbangi dengan menambah porsi protein (dada ayam/ikan) & buah serat.
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Chart.js Interval Visualization
+        function initChart() {
+            const ctx = document.getElementById('intervalChart').getContext('2d');
+            intervalChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [
+                        'T1 (06-08)',
+                        'T2 (09-11) 🥛',
+                        'T3 (12-14)',
+                        'T4 (15-17) 🥑',
+                        'T5 (18-20)',
+                        'T6 (21-23)'
+                    ],
+                    datasets: [{
+                        label: 'Kalori per Interval (kcal)',
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: [
+                            'rgba(255, 140, 0, 0.75)',
+                            'rgba(59, 130, 246, 0.85)',
+                            'rgba(46, 204, 113, 0.75)',
+                            'rgba(142, 68, 173, 0.75)',
+                            'rgba(231, 76, 60, 0.75)',
+                            'rgba(100, 116, 139, 0.75)'
+                        ],
+                        borderColor: [
+                            '#ff8c00',
+                            '#2563eb',
+                            '#2ecc71',
+                            '#8e44ad',
+                            '#e74c3c',
+                            '#475569'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 12
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Kalori: ${context.raw} kcal`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            if(!intervalChartInstance) return;
+
+            const intervalTotals = { T1: 0, T2: 0, T3: 0, T4: 0, T5: 0, T6: 0 };
+            foodLogs.forEach(item => {
+                if(intervalTotals[item.interval] !== undefined) {
+                    intervalTotals[item.interval] += item.calories;
+                }
+            });
+
+            intervalChartInstance.data.datasets[0].data = [
+                intervalTotals.T1,
+                intervalTotals.T2,
+                intervalTotals.T3,
+                intervalTotals.T4,
+                intervalTotals.T5,
+                intervalTotals.T6
+            ];
+            intervalChartInstance.update();
+        }
+    </script>
+</body>
+</html>
